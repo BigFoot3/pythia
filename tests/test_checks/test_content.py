@@ -1,66 +1,197 @@
-"""Tests for content checks (checks 11–14). Implemented in Phase 3."""
+"""Tests for content checks (checks 11–14)."""
 import pytest
 
-
-# generic_headings
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_generic_headings_pass(): ...
+from pythia.checks.content import EeatSignals, FaqPattern, GenericHeadings, StructuredContent
+from pythia.models import AuditContext
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_generic_headings_fail_h1_welcome(): ...
+def _ctx(html: str) -> AuditContext:
+    c = AuditContext(url="https://example.com", html=html)
+    c.get_soup()
+    return c
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_generic_headings_warn_h2_home(): ...
+# ── generic_headings ───────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_generic_headings_pass(ctx):
+    result = await GenericHeadings().run(ctx)
+    assert result.status == "PASS"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_generic_headings_fail_three_generic(): ...
+@pytest.mark.asyncio
+async def test_generic_headings_fail_h1_welcome():
+    # "Welcome" as H1 → FAIL
+    c = _ctx("<html><body><h1>Welcome</h1><h2>Section</h2></body></html>")
+    result = await GenericHeadings().run(c)
+    assert result.status == "FAIL"
 
 
-# faq_pattern
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_faq_pass_dl_element(): ...
+@pytest.mark.asyncio
+async def test_generic_headings_fail_h1_home(ctx_bad):
+    # ctx_bad has <h1>Welcome</h1> → FAIL
+    result = await GenericHeadings().run(ctx_bad)
+    assert result.status == "FAIL"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_faq_pass_details_summary(): ...
+@pytest.mark.asyncio
+async def test_generic_headings_warn_h2_home():
+    c = _ctx("<html><body><h1>Real Title</h1><h2>Home</h2><h2>Section</h2></body></html>")
+    result = await GenericHeadings().run(c)
+    assert result.status == "WARN"
+    assert result.details["generic_headings"][0]["tag"] == "h2"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_faq_pass_schema_faqpage(): ...
+@pytest.mark.asyncio
+async def test_generic_headings_fail_three_generic():
+    c = _ctx(
+        "<html><body>"
+        "<h1>Real Title</h1>"
+        "<h2>Home</h2><h2>Welcome</h2><h2>Page</h2>"
+        "</body></html>"
+    )
+    result = await GenericHeadings().run(c)
+    assert result.status == "FAIL"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_faq_warn_absent(): ...
+@pytest.mark.asyncio
+async def test_generic_headings_case_insensitive():
+    c = _ctx("<html><body><h1>WELCOME</h1></body></html>")
+    result = await GenericHeadings().run(c)
+    assert result.status == "FAIL"
 
 
-# eeat_signals
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_eeat_pass_author_and_date(): ...
+# ── faq_pattern ────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_faq_pass_dl_element(ctx):
+    # ctx (good_page) has a <dl>
+    result = await FaqPattern().run(ctx)
+    assert result.status == "PASS"
+    assert result.details["method"] == "dl_element"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_eeat_fail_neither(): ...
+@pytest.mark.asyncio
+async def test_faq_pass_details_summary():
+    c = _ctx(
+        "<html><body>"
+        "<details><summary>What is this?</summary><p>An answer.</p></details>"
+        "</body></html>"
+    )
+    result = await FaqPattern().run(c)
+    assert result.status == "PASS"
+    assert result.details["method"] == "details_summary"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_eeat_warn_date_only(): ...
+@pytest.mark.asyncio
+async def test_faq_pass_schema_faqpage():
+    c = _ctx(
+        '<html><body itemscope itemtype="https://schema.org/FAQPage">'
+        "<p>Q and A content</p></body></html>"
+    )
+    result = await FaqPattern().run(c)
+    assert result.status == "PASS"
+    assert result.details["method"] == "microdata_faqpage"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_eeat_warn_author_only(): ...
+@pytest.mark.asyncio
+async def test_faq_pass_jsonld_faqpage():
+    c = _ctx(
+        '<html><head>'
+        '<script type="application/ld+json">'
+        '{"@context":"https://schema.org","@type":"FAQPage"}'
+        '</script>'
+        "</head><body></body></html>"
+    )
+    result = await FaqPattern().run(c)
+    assert result.status == "PASS"
+    assert result.details["method"] == "jsonld_faqpage"
 
 
-# structured_content
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_structured_content_pass_ul(): ...
+@pytest.mark.asyncio
+async def test_faq_warn_absent(ctx_bad):
+    result = await FaqPattern().run(ctx_bad)
+    assert result.status == "WARN"
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_structured_content_pass_table(): ...
+# ── eeat_signals ───────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_eeat_pass_author_and_date(ctx):
+    # ctx (good_page) has <span class="author"> and <time>
+    result = await EeatSignals().run(ctx)
+    assert result.status == "PASS"
+    assert result.details["has_author"] is True
+    assert result.details["has_date"] is True
 
 
-@pytest.mark.skip(reason="check not implemented yet")
-async def test_structured_content_fail_none(): ...
+@pytest.mark.asyncio
+async def test_eeat_fail_neither(ctx_bad):
+    result = await EeatSignals().run(ctx_bad)
+    assert result.status == "FAIL"
+    assert result.details["has_author"] is False
+    assert result.details["has_date"] is False
+
+
+@pytest.mark.asyncio
+async def test_eeat_warn_date_only():
+    c = _ctx("<html><body><time datetime='2024-01-01'>Jan 1</time></body></html>")
+    result = await EeatSignals().run(c)
+    assert result.status == "WARN"
+    assert result.details["has_date"] is True
+    assert result.details["has_author"] is False
+
+
+@pytest.mark.asyncio
+async def test_eeat_warn_author_only():
+    c = _ctx('<html><body><span class="author">Jane Smith</span></body></html>')
+    result = await EeatSignals().run(c)
+    assert result.status == "WARN"
+    assert result.details["has_author"] is True
+    assert result.details["has_date"] is False
+
+
+@pytest.mark.asyncio
+async def test_eeat_pass_itemprop_author():
+    c = _ctx(
+        '<html><body>'
+        '<span itemprop="author">John Doe</span>'
+        '<time datetime="2024-03-01">March 2024</time>'
+        "</body></html>"
+    )
+    result = await EeatSignals().run(c)
+    assert result.status == "PASS"
+
+
+# ── structured_content ─────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_structured_content_pass_ul(ctx):
+    result = await StructuredContent().run(ctx)
+    assert result.status == "PASS"
+    assert result.details["has_ul"] is True
+
+
+@pytest.mark.asyncio
+async def test_structured_content_pass_table():
+    c = _ctx("<html><body><table><tr><td>Data</td></tr></table></body></html>")
+    result = await StructuredContent().run(c)
+    assert result.status == "PASS"
+    assert result.details["has_table"] is True
+
+
+@pytest.mark.asyncio
+async def test_structured_content_pass_ol():
+    c = _ctx("<html><body><ol><li>One</li><li>Two</li></ol></body></html>")
+    result = await StructuredContent().run(c)
+    assert result.status == "PASS"
+    assert result.details["has_ol"] is True
+
+
+@pytest.mark.asyncio
+async def test_structured_content_fail_none(ctx_bad):
+    result = await StructuredContent().run(ctx_bad)
+    assert result.status == "FAIL"
+    assert result.details["has_ul"] is False
+    assert result.details["has_ol"] is False
+    assert result.details["has_table"] is False

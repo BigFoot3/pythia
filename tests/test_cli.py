@@ -68,7 +68,7 @@ def test_audit_output_file(tmp_path):
     respx.get("https://example.com").mock(return_value=httpx.Response(200, text=_STUB_HTML))
     respx.get("https://example.com/robots.txt").mock(return_value=httpx.Response(404))
     out = tmp_path / "report.md"
-    result = runner.invoke(app, ["audit", "https://example.com", "--output", str(out)])
+    runner.invoke(app, ["audit", "https://example.com", "--output", str(out)])
     assert out.exists()
     assert "Pythia" in out.read_text()
 

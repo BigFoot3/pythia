@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -30,7 +29,7 @@ def audit(
     format: str = typer.Option("md", "--format", "-f", help="Output format: md or json"),
     lang: str = typer.Option("en", "--lang", "-l", help="Language: en or fr"),
     threshold: int = typer.Option(70, "--threshold", "-t", help="Minimum passing score (exit 1 if below)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save report to file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save report to file"),
 ) -> None:
     """Audit a URL for GEO/AEO signals."""
     passed = asyncio.run(_run_audit(url, format, lang, threshold, output))
@@ -38,7 +37,7 @@ def audit(
 
 
 async def _run_audit(
-    url: str, format: str, lang: str, threshold: int, output: Optional[str]
+    url: str, format: str, lang: str, threshold: int, output: str | None
 ) -> bool:
     ctx = AuditContext(url=url, lang=lang)  # type: ignore[arg-type]
 

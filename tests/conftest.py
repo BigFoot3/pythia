@@ -8,7 +8,8 @@ GOOD_PAGE_HTML = """\
 <head>
   <meta charset="UTF-8">
   <title>How to Build a Python CLI Tool in 2024</title>
-  <meta name="description" content="A comprehensive guide to building command-line tools with Python, typer, and rich. Covers packaging, distribution, and CI.">
+  <meta name="description" content="A guide to building CLI tools with Python, typer, and rich.
+  Covers packaging, distribution, and CI/CD.">
   <meta property="og:title" content="How to Build a Python CLI Tool">
   <meta property="og:description" content="Step-by-step guide with examples.">
   <meta property="og:type" content="article">

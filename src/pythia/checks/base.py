@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from ..models import AuditContext
 
-from ..models import CheckResult
 from ..i18n import get_message
+from ..models import CheckResult
 
 _SCORE_MAP = {"PASS": 100, "WARN": 50, "FAIL": 0}
 
