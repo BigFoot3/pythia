@@ -6,6 +6,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/pythia-geo)](https://pypi.org/project/pythia-geo/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/BigFoot3/pythia/actions/workflows/ci.yml/badge.svg)](https://github.com/BigFoot3/pythia/actions)
+[![Coverage](https://codecov.io/gh/BigFoot3/pythia/branch/main/graph/badge.svg)](https://codecov.io/gh/BigFoot3/pythia)
+[![PyPI downloads](https://img.shields.io/pypi/dm/pythia-geo)](https://pypi.org/project/pythia-geo/)
 
 **Pythia** is a local-first CLI that audits any webpage for **GEO** (Generative Engine Optimization) and **AEO** (Answer Engine Optimization) — making sure AI systems like ChatGPT, Claude, Perplexity, and Mistral can read, cite, and recommend your content.
 

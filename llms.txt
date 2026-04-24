@@ -1,0 +1,56 @@
+# Pythia
+
+> GEO/AEO audit CLI for Python — checks whether AI systems can read, cite, and recommend your site.
+
+Pythia (`pythia-geo` on PyPI) is a local-first command-line tool that audits any webpage for
+Generative Engine Optimization (GEO) and Answer Engine Optimization (AEO) signals.
+No API key required. Works on any public URL. Integrates into CI/CD pipelines.
+
+## Quickstart
+
+- [PyPI package](https://pypi.org/project/pythia-geo/): `pip install pythia-geo`
+- [GitHub repository](https://github.com/BigFoot3/pythia): source code, issues, contributions
+- [Changelog](https://github.com/BigFoot3/pythia/blob/main/CHANGELOG.md): version history
+
+## Checks (14 total)
+
+Pythia runs 14 checks across three weighted categories:
+
+**Structure (40%)** — signals that tell AI crawlers how to index your site
+- `llms_txt_present`: /llms.txt accessible and non-empty
+- `llms_full_txt_present`: /llms-full.txt present (bonus)
+- `robots_ai_bots`: GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, MistralAI-User not blocked
+- `sitemap_accessible`: /sitemap.xml reachable or declared in robots.txt
+- `jsonld_present_valid`: at least one valid JSON-LD block (Schema.org)
+
+**HTML (30%)** — structural signals that help LLMs parse and cite your content
+- `single_h1`: exactly one H1 per page
+- `heading_hierarchy`: no skipped heading levels (H2 → H4, etc.)
+- `title_length`: <title> present, 30–65 characters
+- `meta_description`: present, 70–160 characters
+- `opengraph_minimal`: og:title + og:description + og:type
+
+**Content (30%)** — signals that indicate trustworthy, structured, citable content
+- `generic_headings`: no "Home", "Welcome", "Page", "Untitled" headings
+- `faq_pattern`: FAQ structure detected (<dl>, <details><summary>, or FAQPage JSON-LD)
+- `eeat_signals`: named author and publication date detectable
+- `structured_content`: at least one <ul>, <ol>, or <table>
+
+## CLI usage
+
+```
+pythia audit <url> [--format md|json] [--lang fr|en] [--threshold 70] [--output file]
+pythia list-checks
+pythia version
+```
+
+Exit code: 0 if score >= threshold (default 70), 1 otherwise.
+
+## Tech stack
+
+Python 3.11+, typer, rich, httpx, beautifulsoup4, lxml, pydantic.
+No external API calls. Fully local execution.
+
+## License
+
+MIT — open source, free to use in commercial projects.
