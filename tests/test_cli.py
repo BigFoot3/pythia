@@ -15,7 +15,7 @@ def test_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert "pythia-geo" in result.output
-    assert "0.1.0" in result.output
+    assert "0.2.1" in result.output
 
 
 def test_list_checks():

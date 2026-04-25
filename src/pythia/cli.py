@@ -8,12 +8,10 @@ from rich.markdown import Markdown
 from rich.table import Table
 
 from . import __version__
+from .api import audit_url
 from .checks import ALL_CHECKS
-from .fetcher import fetch_page, fetch_robots
-from .models import AuditContext
 from .reporters.json_reporter import render_json
 from .reporters.markdown import render_markdown
-from .scoring import build_report
 
 app = typer.Typer(
     name="pythia",
@@ -43,19 +41,7 @@ def audit(
 async def _run_audit(
     url: str, format: str, lang: str, threshold: int, output: str | None, page_type: str = "auto"
 ) -> bool:
-    ctx = AuditContext(url=url, lang=lang, page_type=page_type)  # type: ignore[arg-type]
-
-    ctx.html = await fetch_page(ctx)
-    ctx.robots_txt = await fetch_robots(ctx)
-    ctx.get_soup()
-
-    results = []
-    for check_cls in ALL_CHECKS:
-        check = check_cls()
-        result = await check.run(ctx)
-        results.append(result)
-
-    report = build_report(url, results, threshold=threshold, lang=lang, page_type=ctx.effective_page_type())
+    report = await audit_url(url, lang=lang, page_type=page_type, threshold=threshold)
 
     if format == "json":
         output_str = render_json(report)

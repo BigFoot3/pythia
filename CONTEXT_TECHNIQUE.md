@@ -1,29 +1,31 @@
 # Pythia — Contexte technique
 
-Version cible : **0.1.0**
-Checks implémentés : **0 / 14**
-Dernière mise à jour : 2026-04-24
+Version cible : **0.2.1**
+Checks implémentés : **16 / 16**
+Dernière mise à jour : 2026-04-25
 
 ---
 
-## Matrice des 14 checks
+## Matrice des 16 checks
 
-| # | ID | Catégorie | Fichier | Statut |
-|---|-----|-----------|---------|--------|
-| 1 | `llms_txt_present` | structure | checks/structure.py | 🔲 TODO |
-| 2 | `llms_full_txt_present` | structure | checks/structure.py | 🔲 TODO |
-| 3 | `robots_ai_bots` | structure | checks/structure.py | 🔲 TODO |
-| 4 | `sitemap_accessible` | structure | checks/structure.py | 🔲 TODO |
-| 5 | `jsonld_present_valid` | structure | checks/schema.py | 🔲 TODO |
-| 6 | `single_h1` | html | checks/html.py | 🔲 TODO |
-| 7 | `heading_hierarchy` | html | checks/html.py | 🔲 TODO |
-| 8 | `title_length` | html | checks/html.py | 🔲 TODO |
-| 9 | `meta_description` | html | checks/html.py | 🔲 TODO |
-| 10 | `opengraph_minimal` | html | checks/html.py | 🔲 TODO |
-| 11 | `generic_headings` | content | checks/content.py | 🔲 TODO |
-| 12 | `faq_pattern` | content | checks/content.py | 🔲 TODO |
-| 13 | `eeat_signals` | content | checks/content.py | 🔲 TODO |
-| 14 | `structured_content` | content | checks/content.py | 🔲 TODO |
+| # | ID | Catégorie | Fichier | Poids | Page-type aware | Statut |
+|---|-----|-----------|---------|-------|-----------------|--------|
+| 1 | `llms_txt_present` | structure | checks/structure.py | 1.0 | SKIP si pas de base_url | ✅ Implémenté |
+| 2 | `llms_full_txt_present` | structure | checks/structure.py | 0.5 | SKIP si pas de base_url | ✅ Implémenté |
+| 3 | `robots_ai_bots` | structure | checks/structure.py | 1.0 | — | ✅ Implémenté |
+| 4 | `sitemap_accessible` | structure | checks/structure.py | 1.0 | SKIP si pas de base_url | ✅ Implémenté |
+| 5 | `jsonld_present_valid` | structure | checks/schema.py | 1.0 | — | ✅ Implémenté |
+| 6 | `single_h1` | html | checks/html.py | 1.0 | — | ✅ Implémenté |
+| 7 | `heading_hierarchy` | html | checks/html.py | 1.0 | — | ✅ Implémenté |
+| 8 | `title_length` | html | checks/html.py | 1.0 | — | ✅ Implémenté |
+| 9 | `meta_description` | html | checks/html.py | 1.0 | — | ✅ Implémenté |
+| 10 | `opengraph_minimal` | html | checks/html.py | 1.0 | — | ✅ Implémenté |
+| 11 | `canonical_url` | html | checks/html.py | 0.75 | — | ✅ Implémenté (v0.2.0) |
+| 12 | `generic_headings` | content | checks/content.py | 1.0 | — | ✅ Implémenté |
+| 13 | `faq_pattern` | content | checks/content.py | 1.0 | SKIP homepage | ✅ Implémenté |
+| 14 | `eeat_signals` | content | checks/content.py | 1.0 | SKIP homepage | ✅ Implémenté |
+| 15 | `structured_content` | content | checks/content.py | 1.0 | — | ✅ Implémenté |
+| 16 | `word_count` | content | checks/content.py | 1.0 | SKIP homepage | ✅ Implémenté (v0.2.0) |
 
 ---
 
@@ -35,23 +37,26 @@ Dernière mise à jour : 2026-04-24
 GET `/llms.txt`
 - **PASS** : HTTP 200 + body non vide
 - **FAIL** : 404 / erreur réseau / body vide
+- **SKIP** : pas de base_url (mode `audit_html` sans URL)
 
 #### 2. `llms_full_txt_present`
 GET `/llms-full.txt` *(check bonus — weight=0.5, score max = WARN)*
 - **PASS** : HTTP 200 + body non vide
 - **WARN** : absent ou 404
+- **SKIP** : pas de base_url
 
 #### 3. `robots_ai_bots`
-Parse `/robots.txt`, vérifie l'absence de `Disallow` sur :
+Parse `/robots.txt`, vérifie l'absence de `Disallow: /` sur :
 `GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`, `MistralAI-User`
 - **PASS** : aucun bot IA bloqué
 - **WARN** : `/robots.txt` absent
 - **FAIL** : ≥ 1 bot IA bloqué explicitement
 
 #### 4. `sitemap_accessible`
-Cherche `/sitemap.xml` direct, ou `Sitemap:` dans robots.txt
+Cherche `Sitemap:` dans robots.txt, puis `/sitemap.xml`
 - **PASS** : sitemap trouvé + HTTP 200
-- **FAIL** : aucun sitemap trouvable ou inaccessible
+- **FAIL** : aucun sitemap trouvable
+- **SKIP** : pas de base_url
 
 #### 5. `jsonld_present_valid`
 `<script type="application/ld+json">` via BS4 + `json.loads()`
@@ -92,32 +97,46 @@ Vérifie qu'aucun saut de niveau ne se produit
 - **WARN** : 1 ou 2 tags manquants
 - **FAIL** : 0 tags OG
 
+#### 11. `canonical_url` *(v0.2.0)*
+`<link rel="canonical" href="...">` dans `<head>`
+- **PASS** : présent avec href non vide
+- **WARN** : absent
+
 ---
 
 ### Catégorie : content (poids 30%)
 
-#### 11. `generic_headings`
-H1–H6 contenant (case-insensitive) : `home`, `welcome`, `page`, `untitled`
+#### 12. `generic_headings`
+H1–H6 contenant : `home`, `welcome`, `page`, `untitled`
 - **PASS** : 0 heading générique
 - **WARN** : 1–2 génériques en H2–H6 uniquement
 - **FAIL** : H1 générique **ou** ≥ 3 headings génériques
 
-#### 12. `faq_pattern`
-Détecte : `<dl>`, `<details><summary>`, `itemtype="FAQPage"`, ou ≥ 3 paires Q/R
+#### 13. `faq_pattern`
+Détecte : `<dl>`, `<details><summary>`, `itemtype="FAQPage"`, JSON-LD FAQPage
 - **PASS** : pattern détecté
-- **WARN** : absent *(WARN et non FAIL — la FAQ est un bonus GEO)*
+- **WARN** : absent
+- **SKIP** : page de type homepage
 
-#### 13. `eeat_signals`
+#### 14. `eeat_signals`
 Auteur : `rel="author"`, `[itemprop="author"]`, `.author`, `.byline`
 Date : `<time>`, `[itemprop="datePublished"]`, `meta[property="article:published_time"]`
 - **PASS** : auteur + date détectés
 - **WARN** : un seul signal sur deux
 - **FAIL** : aucun signal
+- **SKIP** : page de type homepage
 
-#### 14. `structured_content`
+#### 15. `structured_content`
 `<ul>`, `<ol>`, ou `<table>` dans `<body>`
 - **PASS** : ≥ 1 élément structuré
 - **FAIL** : aucun
+
+#### 16. `word_count` *(v0.2.0)*
+Compte les mots du body (excluant `<nav>`, `<header>`, `<footer>`, `<aside>`, `<script>`, `<style>`)
+- **PASS** : ≥ 300 mots
+- **WARN** : 100–299 mots
+- **FAIL** : < 100 mots
+- **SKIP** : page de type homepage
 
 ---
 
@@ -133,8 +152,41 @@ Threshold CLI par défaut : **70/100**. Exit code 1 si score < threshold.
 
 ---
 
+## Page-type awareness (v0.2.0)
+
+| Type | Détection auto (mode `auto`) | Checks skippés |
+|------|------------------------------|----------------|
+| `homepage` | URL path = `""`, `"/"`, `/index.html`, `/index.php`, `/index.htm` | `faq_pattern`, `eeat_signals`, `word_count` |
+| `article` | Tout autre path | aucun |
+| `doc` | Explicite uniquement (`--page-type doc`) | aucun |
+
+---
+
+## API publique (v0.2.1)
+
+```python
+from pythia import audit_url, audit_html, Report, CheckResult, AuditContext
+
+# Audit live
+report: Report = await audit_url("https://example.com/page")
+
+# Audit offline
+report: Report = await audit_html(html_string, base_url="https://example.com/page")
+
+# Sync wrapper
+import asyncio
+report = asyncio.run(audit_url("https://example.com"))
+```
+
+Exports `__init__.py` : `audit_url`, `audit_html`, `Report`, `CheckResult`, `AuditContext`, `__version__`
+
+---
+
 ## Sessions de travail
 
 | Session | Date | Travail effectué |
 |---------|------|-----------------|
 | Scaffold v0.1 | 2026-04-24 | Arbo complète, pyproject.toml, models, scoring, i18n, fetcher, CLI, reporters, 14 stubs, CI, README, CLAUDE.md |
+| v0.1.0 — checks complets | 2026-04-24 | 14 checks implémentés (structure, schema, html, content), 88 tests, ruff clean, publié PyPI |
+| v0.2.0 — page-type + 2 nouveaux checks | 2026-04-25 | `--page-type`, auto-détection homepage, `eeat`/`faq` SKIP homepage, `canonical_url`, `word_count`, 112 tests |
+| v0.2.1 — API publique | 2026-04-25 | `api.py` (`audit_url`, `audit_html`), `__init__.py` exports, SKIP gracieux structure sans base_url, 125 tests |

@@ -16,8 +16,10 @@ AI_BOTS = [
 ]
 
 
-def _base_url(ctx: AuditContext) -> str:
+def _base_url(ctx: AuditContext) -> str | None:
     p = urlparse(ctx.url)
+    if not p.scheme or not p.netloc:
+        return None
     return f"{p.scheme}://{p.netloc}"
 
 
@@ -61,7 +63,10 @@ class LlmsTxtPresent(BaseCheck):
     weight = 1.0
 
     async def run(self, ctx: AuditContext) -> CheckResult:
-        url = f"{_base_url(ctx)}/llms.txt"
+        base = _base_url(ctx)
+        if not base:
+            return self._skip("No base URL — cannot check llms.txt")
+        url = f"{base}/llms.txt"
         response = await fetch_url(url, ctx)
         if response and response.status_code == 200 and response.text.strip():
             return self._result("PASS", ctx, details={"url": url, "size": len(response.text)})
@@ -75,7 +80,10 @@ class LlmsFullTxtPresent(BaseCheck):
     weight = 0.5  # bonus check
 
     async def run(self, ctx: AuditContext) -> CheckResult:
-        url = f"{_base_url(ctx)}/llms-full.txt"
+        base = _base_url(ctx)
+        if not base:
+            return self._skip("No base URL — cannot check llms-full.txt")
+        url = f"{base}/llms-full.txt"
         response = await fetch_url(url, ctx)
         if response and response.status_code == 200 and response.text.strip():
             return self._result("PASS", ctx, details={"url": url, "size": len(response.text)})
@@ -114,8 +122,11 @@ class SitemapAccessible(BaseCheck):
                         return self._result("PASS", ctx,
                                             details={"url": sitemap_url, "source": "robots.txt"})
 
-        # Fallback: /sitemap.xml
-        sitemap_url = f"{_base_url(ctx)}/sitemap.xml"
+        base = _base_url(ctx)
+        if not base:
+            return self._skip("No base URL — cannot check sitemap")
+
+        sitemap_url = f"{base}/sitemap.xml"
         resp = await fetch_url(sitemap_url, ctx)
         if resp and resp.status_code == 200:
             return self._result("PASS", ctx, details={"url": sitemap_url, "source": "direct"})

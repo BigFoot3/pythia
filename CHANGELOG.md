@@ -6,6 +6,17 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-04-25
+
+### Added
+- **Public Python API** — `pythia` is now usable as a library, not just a CLI:
+  - `audit_url(url, lang, page_type, threshold) -> Report` — fetch + audit over HTTP
+  - `audit_html(html, base_url, lang, page_type, threshold) -> Report` — offline/CI audit
+  - Both exported from `pythia.__init__` alongside `Report`, `CheckResult`, `AuditContext`
+- Structure checks (`llms_txt`, `llms_full_txt`, `sitemap`) now return `SKIP` gracefully
+  when called via `audit_html("")` without a base URL.
+- 13 new tests (`test_api.py`), 125 total.
+
 ## [0.2.0] — 2026-04-25
 
 ### Added

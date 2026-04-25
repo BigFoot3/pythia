@@ -7,7 +7,7 @@ import httpx
 from .models import AuditContext
 
 HEADERS = {
-    "User-Agent": "pythia-geo/0.1 (+https://github.com/BigFoot3/pythia)",
+    "User-Agent": "pythia-geo/0.2 (+https://github.com/BigFoot3/pythia)",
 }
 TIMEOUT = 10.0
 
