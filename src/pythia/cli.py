@@ -30,16 +30,20 @@ def audit(
     lang: str = typer.Option("en", "--lang", "-l", help="Language: en or fr"),
     threshold: int = typer.Option(70, "--threshold", "-t", help="Minimum passing score (exit 1 if below)"),
     output: str | None = typer.Option(None, "--output", "-o", help="Save report to file"),
+    page_type: str = typer.Option(
+        "auto", "--page-type", "-p",
+        help="Page type: auto, article, homepage, doc (auto detects from URL path)",
+    ),
 ) -> None:
     """Audit a URL for GEO/AEO signals."""
-    passed = asyncio.run(_run_audit(url, format, lang, threshold, output))
+    passed = asyncio.run(_run_audit(url, format, lang, threshold, output, page_type))
     raise typer.Exit(code=0 if passed else 1)
 
 
 async def _run_audit(
-    url: str, format: str, lang: str, threshold: int, output: str | None
+    url: str, format: str, lang: str, threshold: int, output: str | None, page_type: str = "auto"
 ) -> bool:
-    ctx = AuditContext(url=url, lang=lang)  # type: ignore[arg-type]
+    ctx = AuditContext(url=url, lang=lang, page_type=page_type)  # type: ignore[arg-type]
 
     ctx.html = await fetch_page(ctx)
     ctx.robots_txt = await fetch_robots(ctx)
@@ -51,7 +55,7 @@ async def _run_audit(
         result = await check.run(ctx)
         results.append(result)
 
-    report = build_report(url, results, threshold=threshold, lang=lang)
+    report = build_report(url, results, threshold=threshold, lang=lang, page_type=ctx.effective_page_type())
 
     if format == "json":
         output_str = render_json(report)

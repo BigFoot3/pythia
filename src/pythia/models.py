@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, PrivateAttr
+
+PageType = Literal["auto", "article", "homepage", "doc"]
+ResolvedPageType = Literal["article", "homepage", "doc"]
+
+_HOMEPAGE_PATHS = {"", "/", "/index.html", "/index.php", "/index.htm"}
 
 
 class AuditContext(BaseModel):
@@ -11,6 +17,7 @@ class AuditContext(BaseModel):
     lang: Literal["fr", "en"] = "en"
     html: str = ""
     robots_txt: str = ""
+    page_type: PageType = "auto"
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -21,6 +28,12 @@ class AuditContext(BaseModel):
         if self._soup is None:
             self._soup = BeautifulSoup(self.html, "lxml")
         return self._soup
+
+    def effective_page_type(self) -> ResolvedPageType:
+        if self.page_type != "auto":
+            return self.page_type  # type: ignore[return-value]
+        path = urlparse(self.url).path.rstrip("/")
+        return "homepage" if path in _HOMEPAGE_PATHS else "article"
 
 
 class CheckResult(BaseModel):
@@ -37,6 +50,7 @@ class CheckResult(BaseModel):
 class Report(BaseModel):
     url: str
     lang: Literal["fr", "en"] = "en"
+    page_type: ResolvedPageType = "article"
     score: float
     threshold: int
     passed: bool

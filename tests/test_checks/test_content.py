@@ -1,14 +1,18 @@
-"""Tests for content checks (checks 11–14)."""
+"""Tests for content checks (checks 11–15)."""
 import pytest
 
-from pythia.checks.content import EeatSignals, FaqPattern, GenericHeadings, StructuredContent
+from pythia.checks.content import EeatSignals, FaqPattern, GenericHeadings, StructuredContent, WordCount
 from pythia.models import AuditContext
 
 
-def _ctx(html: str) -> AuditContext:
-    c = AuditContext(url="https://example.com", html=html)
+def _ctx(html: str, url: str = "https://example.com/article", page_type: str = "auto") -> AuditContext:
+    c = AuditContext(url=url, html=html, page_type=page_type)  # type: ignore[arg-type]
     c.get_soup()
     return c
+
+
+def _homepage_ctx(html: str) -> AuditContext:
+    return _ctx(html, url="https://example.com/", page_type="auto")
 
 
 # ── generic_headings ───────────────────────────────────────────────────────
@@ -195,3 +199,85 @@ async def test_structured_content_fail_none(ctx_bad):
     assert result.details["has_ul"] is False
     assert result.details["has_ol"] is False
     assert result.details["has_table"] is False
+
+
+# ── page-type awareness (faq + eeat) ──────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_faq_skip_for_homepage():
+    c = _homepage_ctx("<html><body><p>Welcome</p></body></html>")
+    result = await FaqPattern().run(c)
+    assert result.status == "SKIP"
+
+
+@pytest.mark.asyncio
+async def test_eeat_skip_for_homepage():
+    c = _homepage_ctx("<html><body><p>Welcome</p></body></html>")
+    result = await EeatSignals().run(c)
+    assert result.status == "SKIP"
+
+
+@pytest.mark.asyncio
+async def test_faq_not_skip_for_explicit_article():
+    c = _ctx("<html><body><p>No FAQ here.</p></body></html>", page_type="article")
+    result = await FaqPattern().run(c)
+    assert result.status == "WARN"
+
+
+@pytest.mark.asyncio
+async def test_eeat_not_skip_for_explicit_article():
+    c = _ctx("<html><body><p>No signals.</p></body></html>", page_type="article")
+    result = await EeatSignals().run(c)
+    assert result.status == "FAIL"
+
+
+# ── word_count ─────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_word_count_pass():
+    words = " ".join(["content"] * 320)
+    c = _ctx(f"<html><body><article><p>{words}</p></article></body></html>")
+    result = await WordCount().run(c)
+    assert result.status == "PASS"
+    assert result.details["word_count"] >= 300
+
+
+@pytest.mark.asyncio
+async def test_word_count_fail_too_short():
+    c = _ctx("<html><body><p>Short page.</p></body></html>")
+    result = await WordCount().run(c)
+    assert result.status == "FAIL"
+    assert result.details["word_count"] < 100
+
+
+@pytest.mark.asyncio
+async def test_word_count_warn_medium():
+    words = " ".join(["word"] * 150)
+    c = _ctx(f"<html><body><p>{words}</p></body></html>")
+    result = await WordCount().run(c)
+    assert result.status == "WARN"
+    assert 100 <= result.details["word_count"] < 300
+
+
+@pytest.mark.asyncio
+async def test_word_count_skip_homepage():
+    c = _homepage_ctx("<html><body><p>Welcome to our homepage.</p></body></html>")
+    result = await WordCount().run(c)
+    assert result.status == "SKIP"
+
+
+@pytest.mark.asyncio
+async def test_word_count_excludes_nav_and_script():
+    # nav + script content should not count toward word count
+    nav_words = " ".join(["navword"] * 500)
+    body_words = " ".join(["realword"] * 50)
+    html = (
+        f"<html><body>"
+        f"<nav>{nav_words}</nav>"
+        f"<script>var x = 1;</script>"
+        f"<article><p>{body_words}</p></article>"
+        f"</body></html>"
+    )
+    c = _ctx(html)
+    result = await WordCount().run(c)
+    assert result.details["word_count"] < 100  # only real content counted

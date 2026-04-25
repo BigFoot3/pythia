@@ -19,7 +19,7 @@ def render_markdown(report: Report) -> str:
         f"# Pythia GEO Audit — {report.url}",
         "",
         f"**Score: {report.score:.0f}/100**  {_score_bar(report.score)}  "
-        f"{status_str} *(threshold: {report.threshold})*",
+        f"{status_str} *(threshold: {report.threshold})*  —  page type: `{report.page_type}`",
         "",
     ]
 

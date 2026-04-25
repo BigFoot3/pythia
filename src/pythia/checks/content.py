@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import re
 
@@ -9,6 +10,7 @@ from .base import BaseCheck
 _GENERIC_WORDS = {"home", "welcome", "page", "untitled"}
 _AUTHOR_CLS = re.compile(r"\bauthor\b", re.I)
 _BYLINE_CLS = re.compile(r"\bbyline\b", re.I)
+_NOISE_TAGS = {"script", "style", "nav", "header", "footer", "aside"}
 
 
 class GenericHeadings(BaseCheck):
@@ -39,6 +41,9 @@ class FaqPattern(BaseCheck):
     weight = 1.0
 
     async def run(self, ctx: AuditContext) -> CheckResult:
+        if ctx.effective_page_type() == "homepage":
+            return self._skip("FAQ pattern not evaluated for homepage")
+
         soup = ctx.get_soup()
 
         # Schema.org FAQPage via microdata
@@ -72,6 +77,9 @@ class EeatSignals(BaseCheck):
     weight = 1.0
 
     async def run(self, ctx: AuditContext) -> CheckResult:
+        if ctx.effective_page_type() == "homepage":
+            return self._skip("E-E-A-T signals not evaluated for homepage")
+
         soup = ctx.get_soup()
 
         has_author = bool(
@@ -114,9 +122,39 @@ class StructuredContent(BaseCheck):
                             recommendation="Add structured content using <ul>, <ol>, or <table> elements")
 
 
+class WordCount(BaseCheck):
+    name = "word_count"
+    category = "content"
+    weight = 1.0
+
+    MIN_PASS = 300
+    MIN_WARN = 100
+
+    async def run(self, ctx: AuditContext) -> CheckResult:
+        if ctx.effective_page_type() == "homepage":
+            return self._skip("Word count not evaluated for homepage")
+
+        soup = ctx.get_soup()
+        body = copy.deepcopy(soup.find("body") or soup)
+        for tag in body.find_all(list(_NOISE_TAGS)):
+            tag.decompose()
+        text = body.get_text(separator=" ", strip=True)
+        count = len(text.split())
+
+        details = {"word_count": count, "min_recommended": self.MIN_PASS}
+        if count >= self.MIN_PASS:
+            return self._result("PASS", ctx, details=details)
+        if count >= self.MIN_WARN:
+            return self._result("WARN", ctx, details=details,
+                                recommendation=f"Add more content — {count} words found, aim for ≥ {self.MIN_PASS}")
+        return self._result("FAIL", ctx, details=details,
+                            recommendation=f"Content too short — {count} words found, aim for ≥ {self.MIN_PASS}")
+
+
 CHECKS: list[type[BaseCheck]] = [
     GenericHeadings,
     FaqPattern,
     EeatSignals,
     StructuredContent,
+    WordCount,
 ]

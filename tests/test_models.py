@@ -1,3 +1,5 @@
+import pytest
+
 from pythia.models import AuditContext, CheckResult, Report
 
 
@@ -36,3 +38,36 @@ def test_report_passed():
     )
     assert r.passed is True
     assert r.lang == "en"
+    assert r.page_type == "article"
+
+
+# ── effective_page_type ────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("url,expected", [
+    ("https://example.com", "homepage"),
+    ("https://example.com/", "homepage"),
+    ("https://example.com/index.html", "homepage"),
+    ("https://example.com/index.php", "homepage"),
+    ("https://example.com/index.htm", "homepage"),
+    ("https://example.com/about", "article"),
+    ("https://example.com/blog/my-post", "article"),
+    ("https://example.com/fr/", "article"),  # non-root paths → article
+])
+def test_effective_page_type_auto(url, expected):
+    ctx = AuditContext(url=url)
+    assert ctx.effective_page_type() == expected
+
+
+def test_effective_page_type_explicit_homepage():
+    ctx = AuditContext(url="https://example.com/blog/post", page_type="homepage")
+    assert ctx.effective_page_type() == "homepage"
+
+
+def test_effective_page_type_explicit_doc():
+    ctx = AuditContext(url="https://example.com/", page_type="doc")
+    assert ctx.effective_page_type() == "doc"
+
+
+def test_effective_page_type_explicit_article():
+    ctx = AuditContext(url="https://example.com/", page_type="article")
+    assert ctx.effective_page_type() == "article"

@@ -71,6 +71,16 @@ MESSAGES: dict[str, dict[str, dict[str, str]]] = {
             "PASS": "Structured content found (lists or tables)",
             "FAIL": "No structured content found (no lists or tables)",
         },
+        "word_count": {
+            "PASS": "Content length is sufficient (≥ 300 words)",
+            "WARN": "Content is thin (100–299 words)",
+            "FAIL": "Content is too short (< 100 words)",
+            "SKIP": "Word count not evaluated for this page type",
+        },
+        "canonical_url": {
+            "PASS": "Canonical URL declared",
+            "WARN": "No canonical URL found",
+        },
     },
     "fr": {
         "llms_txt_present": {
@@ -137,6 +147,16 @@ MESSAGES: dict[str, dict[str, dict[str, str]]] = {
         "structured_content": {
             "PASS": "Contenu structuré trouvé (listes ou tableaux)",
             "FAIL": "Aucun contenu structuré trouvé (pas de listes ni tableaux)",
+        },
+        "word_count": {
+            "PASS": "Longueur du contenu suffisante (≥ 300 mots)",
+            "WARN": "Contenu trop court (100–299 mots)",
+            "FAIL": "Contenu insuffisant (< 100 mots)",
+            "SKIP": "Nombre de mots non évalué pour ce type de page",
+        },
+        "canonical_url": {
+            "PASS": "URL canonique déclarée",
+            "WARN": "Aucune URL canonique trouvée",
         },
     },
 }

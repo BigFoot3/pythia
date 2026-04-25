@@ -73,20 +73,20 @@ def bad_html() -> str:
 
 @pytest.fixture
 def ctx(good_html: str) -> AuditContext:
-    c = AuditContext(url="https://example.com", html=good_html)
+    c = AuditContext(url="https://example.com", html=good_html, page_type="article")
     c.get_soup()
     return c
 
 
 @pytest.fixture
 def ctx_fr(good_html: str) -> AuditContext:
-    c = AuditContext(url="https://example.com", html=good_html, lang="fr")
+    c = AuditContext(url="https://example.com", html=good_html, lang="fr", page_type="article")
     c.get_soup()
     return c
 
 
 @pytest.fixture
 def ctx_bad(bad_html: str) -> AuditContext:
-    c = AuditContext(url="https://example.com", html=bad_html)
+    c = AuditContext(url="https://example.com", html=bad_html, page_type="article")
     c.get_soup()
     return c

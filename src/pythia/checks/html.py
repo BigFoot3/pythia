@@ -100,10 +100,24 @@ class OpenGraphMinimal(BaseCheck):
                             recommendation=f"Add missing OpenGraph tags: {', '.join(missing)}")
 
 
+class CanonicalUrl(BaseCheck):
+    name = "canonical_url"
+    category = "html"
+    weight = 0.75
+
+    async def run(self, ctx: AuditContext) -> CheckResult:
+        tags = ctx.get_soup().find_all("link", rel="canonical")
+        if tags and tags[0].get("href", "").strip():
+            return self._result("PASS", ctx, details={"canonical": tags[0]["href"]})
+        return self._result("WARN", ctx,
+                            recommendation='Add <link rel="canonical" href="..."> to prevent duplicate content issues')
+
+
 CHECKS: list[type[BaseCheck]] = [
     SingleH1,
     HeadingHierarchy,
     TitleLength,
     MetaDescription,
     OpenGraphMinimal,
+    CanonicalUrl,
 ]

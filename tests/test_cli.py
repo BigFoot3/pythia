@@ -26,21 +26,21 @@ def test_list_checks():
     assert "faq_pattern" in result.output
 
 
-def test_list_checks_has_14_rows():
+def test_list_checks_has_16_rows():
     result = runner.invoke(app, ["list-checks"])
     assert result.exit_code == 0
-    # 14 checks defined
+    # 16 checks defined (14 original + canonical_url + word_count)
     count = sum(
         1 for line in result.output.splitlines()
         if any(name in line for name in [
             "llms_txt_present", "llms_full_txt_present", "robots_ai_bots",
             "sitemap_accessible", "jsonld_present_valid", "single_h1",
             "heading_hierarchy", "title_length", "meta_description",
-            "opengraph_minimal", "generic_headings", "faq_pattern",
-            "eeat_signals", "structured_content",
+            "opengraph_minimal", "canonical_url", "generic_headings",
+            "faq_pattern", "eeat_signals", "structured_content", "word_count",
         ])
     )
-    assert count == 14
+    assert count == 16
 
 
 @respx.mock

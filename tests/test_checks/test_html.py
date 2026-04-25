@@ -1,7 +1,8 @@
-"""Tests for HTML checks (checks 6–10)."""
+"""Tests for HTML checks (checks 6–10 + canonical_url)."""
 import pytest
 
 from pythia.checks.html import (
+    CanonicalUrl,
     HeadingHierarchy,
     MetaDescription,
     OpenGraphMinimal,
@@ -201,3 +202,32 @@ async def test_opengraph_warn_missing_two():
     result = await OpenGraphMinimal().run(c)
     assert result.status == "WARN"
     assert len(result.details["missing"]) == 2
+
+
+# ── canonical_url ──────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_canonical_url_pass():
+    c = _ctx('<html><head><link rel="canonical" href="https://example.com/page"></head></html>')
+    result = await CanonicalUrl().run(c)
+    assert result.status == "PASS"
+    assert result.details["canonical"] == "https://example.com/page"
+
+
+@pytest.mark.asyncio
+async def test_canonical_url_warn_absent(ctx_bad):
+    result = await CanonicalUrl().run(ctx_bad)
+    assert result.status == "WARN"
+    assert result.recommendation is not None
+
+
+@pytest.mark.asyncio
+async def test_canonical_url_warn_empty_href():
+    c = _ctx('<html><head><link rel="canonical" href=""></head></html>')
+    result = await CanonicalUrl().run(c)
+    assert result.status == "WARN"
+
+
+@pytest.mark.asyncio
+async def test_canonical_url_weight():
+    assert CanonicalUrl().weight == 0.75

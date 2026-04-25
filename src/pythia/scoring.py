@@ -37,11 +37,13 @@ def build_report(
     results: list[CheckResult],
     threshold: int = 70,
     lang: str = "en",
+    page_type: str = "article",
 ) -> Report:
     score, scores_by_category = score_results(results)
     return Report(
         url=url,
         lang=lang,  # type: ignore[arg-type]
+        page_type=page_type,  # type: ignore[arg-type]
         score=round(score, 1),
         threshold=threshold,
         passed=score >= threshold,
