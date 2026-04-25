@@ -6,6 +6,20 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-25
+
+### Added
+- **`pythia generate-llms <url>`** — new CLI command that generates a ready-to-deploy
+  `llms.txt` by crawling the site's sitemap:
+  - Reads `robots.txt` to find a declared `Sitemap:` URL, falls back to `/sitemap.xml`
+  - Handles sitemap index files (follows one level of indirection)
+  - Fetches up to `--max-pages` pages concurrently (default 50, concurrency 5)
+  - Groups pages by their first URL path segment into `## Section` headings
+  - `Main` section always appears first; remaining sections sorted alphabetically
+- **`generate_llms_txt(url, max_pages, concurrency)`** exported from `pythia` as public API
+- **`pythia.generators`** subpackage with `llms_txt.py` core logic
+- 28 new tests (153 total), covering pure helpers + integration via `respx`
+
 ## [0.2.1] — 2026-04-25
 
 ### Added

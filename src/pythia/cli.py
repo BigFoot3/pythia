@@ -10,6 +10,7 @@ from rich.table import Table
 from . import __version__
 from .api import audit_url
 from .checks import ALL_CHECKS
+from .generators import generate_llms_txt
 from .reporters.json_reporter import render_json
 from .reporters.markdown import render_markdown
 
@@ -71,6 +72,23 @@ def list_checks() -> None:
         c = check_cls()
         table.add_row(c.name, c.category, str(c.weight))
     console.print(table)
+
+
+@app.command(name="generate-llms")
+def generate_llms(
+    url: str = typer.Argument(..., help="Site URL (sitemap will be auto-discovered)"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save to file (default: print to stdout)"),
+    max_pages: int = typer.Option(50, "--max-pages", "-n", help="Maximum number of pages to crawl"),
+) -> None:
+    """Generate a ready-to-deploy llms.txt by crawling the site's sitemap."""
+    content = asyncio.run(generate_llms_txt(url, max_pages=max_pages))
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(content)
+        console.print(f"[green]llms.txt saved to {output}[/green]")
+    else:
+        console.print(content)
 
 
 @app.command()
