@@ -1,0 +1,84 @@
+name: 'Pythia GEO/AEO Audit'
+description: 'Audit a URL for Generative Engine Optimization signals — no API key required'
+author: 'BigFoot3'
+branding:
+  icon: 'search'
+  color: 'purple'
+
+inputs:
+  url:
+    description: 'URL to audit'
+    required: true
+  threshold:
+    description: 'Minimum passing score (0–100). Exit 1 if below.'
+    required: false
+    default: '70'
+  fail-on-fail:
+    description: 'Fail this CI step when score is below threshold'
+    required: false
+    default: 'true'
+  page-type:
+    description: 'Page type hint: auto | article | homepage | doc'
+    required: false
+    default: 'auto'
+  lang:
+    description: 'Report language: en | fr'
+    required: false
+    default: 'en'
+  version:
+    description: 'pythia-geo version to install (default: latest stable)'
+    required: false
+    default: ''
+
+outputs:
+  score:
+    description: 'GEO/AEO score (0–100)'
+    value: ${{ steps.run.outputs.score }}
+  passed:
+    description: '"true" if score ≥ threshold, "false" otherwise'
+    value: ${{ steps.run.outputs.passed }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install pythia-geo
+      shell: bash
+      run: |
+        pkg="pythia-geo"
+        [ -n "${{ inputs.version }}" ] && pkg="pythia-geo==${{ inputs.version }}"
+        pip install "$pkg" --quiet
+
+    - name: Audit ${{ inputs.url }}
+      id: run
+      shell: bash
+      run: |
+        report="${RUNNER_TEMP:-/tmp}/pythia_report.json"
+
+        # Pass 1 — JSON to temp file; captures exit code (0=pass, 1=below threshold)
+        set +e
+        pythia audit "${{ inputs.url }}" \
+          --threshold "${{ inputs.threshold }}" \
+          --format json \
+          --output "$report" \
+          --page-type "${{ inputs.page-type }}" \
+          --lang "${{ inputs.lang }}"
+        audit_exit=$?
+        set -e
+
+        # Emit typed outputs from JSON
+        SCORE=$(python3 -c "import json; print(f\"{json.load(open('$report'))['score']:.1f}\")" 2>/dev/null || echo "0")
+        PASSED=$(python3 -c "import json; d=json.load(open('$report')); print(str(d['passed']).lower())" 2>/dev/null || echo "false")
+        echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+        echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
+
+        # Pass 2 — Markdown for step log and GitHub step summary
+        pythia audit "${{ inputs.url }}" \
+          --threshold "${{ inputs.threshold }}" \
+          --page-type "${{ inputs.page-type }}" \
+          --lang "${{ inputs.lang }}" \
+          | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}" || true
+
+        # Honour fail-on-fail
+        if [ "${{ inputs.fail-on-fail }}" = "true" ] && [ "$audit_exit" -ne 0 ]; then
+          exit "$audit_exit"
+        fi
