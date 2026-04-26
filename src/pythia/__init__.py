@@ -12,18 +12,23 @@ Quick start::
     # Audit raw HTML (offline / CI)
     report = asyncio.run(audit_html("<html>...</html>", base_url="https://example.com"))
 """
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
-from .api import audit_html, audit_url
+from .api import audit_html, audit_url, fix_url
+from .fixers import generate_fixes
 from .generators import generate_llms_txt
-from .models import AuditContext, CheckResult, Report
+from .models import AuditContext, CheckResult, Fix, FixReport, Report
 
 __all__ = [
     "__version__",
     "audit_url",
     "audit_html",
+    "fix_url",
+    "generate_fixes",
     "generate_llms_txt",
     "Report",
     "CheckResult",
+    "Fix",
+    "FixReport",
     "AuditContext",
 ]

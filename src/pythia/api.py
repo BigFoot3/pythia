@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from .checks import ALL_CHECKS
 from .fetcher import fetch_page, fetch_robots
-from .models import AuditContext, CheckResult, Report
+from .fixers import generate_fixes
+from .models import AuditContext, CheckResult, FixReport, Report
 from .scoring import build_report
 
 
@@ -66,3 +67,26 @@ async def audit_html(
     label = base_url or "<html>"
     return build_report(label, results, threshold=threshold, lang=lang,
                         page_type=ctx.effective_page_type())
+
+
+async def fix_url(
+    url: str,
+    lang: str = "en",
+    page_type: str = "auto",
+    threshold: int = 70,
+) -> FixReport:
+    """Audit *url* and return a :class:`FixReport` with ready-to-paste HTML snippets.
+
+    Example::
+
+        import asyncio
+        from pythia import fix_url
+
+        fix_report = asyncio.run(fix_url("https://example.com"))
+        for fix in fix_report.fixes:
+            print(fix.check_name, fix.location)
+            print(fix.snippet)
+    """
+    report = await audit_url(url, lang=lang, page_type=page_type, threshold=threshold)
+    fixes = generate_fixes(report)
+    return FixReport(url=url, audit=report, fixes=fixes)
