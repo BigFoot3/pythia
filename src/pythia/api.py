@@ -1,10 +1,12 @@
 """Public async API — usable as a library without the CLI."""
 from __future__ import annotations
 
+import asyncio
+
 from .checks import ALL_CHECKS
 from .fetcher import fetch_page, fetch_robots
 from .fixers import generate_fixes
-from .models import AuditContext, CheckResult, FixReport, Report
+from .models import AuditContext, CheckResult, CompareReport, FixReport, Report
 from .scoring import build_report
 
 
@@ -90,3 +92,38 @@ async def fix_url(
     report = await audit_url(url, lang=lang, page_type=page_type, threshold=threshold)
     fixes = generate_fixes(report)
     return FixReport(url=url, audit=report, fixes=fixes)
+
+
+async def compare_urls(
+    url1: str,
+    url2: str,
+    lang: str = "en",
+    threshold: int = 70,
+) -> CompareReport:
+    """Audit *url1* and *url2* concurrently and return a :class:`CompareReport`.
+
+    Example::
+
+        import asyncio
+        from pythia import compare_urls
+
+        cmp = asyncio.run(compare_urls("https://site-a.com", "https://site-b.com"))
+        print(f"{cmp.url1} {cmp.report1.score:.0f}  vs  {cmp.url2} {cmp.report2.score:.0f}")
+        print("leader:", cmp.leader)
+    """
+    report1, report2 = await asyncio.gather(
+        audit_url(url1, lang=lang, threshold=threshold),
+        audit_url(url2, lang=lang, threshold=threshold),
+    )
+    delta = round(report2.score - report1.score, 1)
+    if abs(delta) < 0.5:
+        leader = "tie"
+    elif delta < 0:
+        leader = "url1"
+    else:
+        leader = "url2"
+    return CompareReport(
+        url1=url1, url2=url2,
+        report1=report1, report2=report2,
+        score_delta=delta, leader=leader,  # type: ignore[arg-type]
+    )

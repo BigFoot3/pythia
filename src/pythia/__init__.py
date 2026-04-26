@@ -14,21 +14,23 @@ Quick start::
 """
 __version__ = "0.4.0"
 
-from .api import audit_html, audit_url, fix_url
+from .api import audit_html, audit_url, compare_urls, fix_url
 from .fixers import generate_fixes
 from .generators import generate_llms_txt
-from .models import AuditContext, CheckResult, Fix, FixReport, Report
+from .models import AuditContext, CheckResult, CompareReport, Fix, FixReport, Report
 
 __all__ = [
     "__version__",
     "audit_url",
     "audit_html",
     "fix_url",
+    "compare_urls",
     "generate_fixes",
     "generate_llms_txt",
     "Report",
     "CheckResult",
     "Fix",
     "FixReport",
+    "CompareReport",
     "AuditContext",
 ]
