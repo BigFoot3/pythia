@@ -6,6 +6,30 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-26
+
+### Added
+- **`pythia fix <url>`** — new CLI command that generates ready-to-paste HTML/server
+  snippets for every FAIL/WARN check:
+  - Fixes grouped by location: `<head>`, `<body>`, server-side actions, content guidance
+  - Each fix carries the exact snippet to copy-paste, plus an optional explanatory note
+  - Supports `--format json` for programmatic consumption
+- **`fix_url(url) -> FixReport`** — new public async API; `FixReport` contains the full
+  `audit: Report` and `fixes: list[Fix]`
+- **`generate_fixes(report) -> list[Fix]`** — pure function exported from `pythia`
+- **`Fix`** and **`FixReport`** Pydantic models exported from `pythia`
+- **`pythia compare <url1> <url2>`** — new CLI command that audits both URLs concurrently
+  and presents a side-by-side check-by-check comparison table with per-category scores
+  and a leader verdict
+- **`compare_urls(url1, url2) -> CompareReport`** — new public async API; both audits run
+  concurrently via `asyncio.gather()`
+- **`CompareReport`** Pydantic model exported from `pythia`
+- 59 new tests (212 total, up from 153); all renderers covered (md + json)
+
+### Fixed
+- JSON CLI output now uses `print()` instead of `console.print()` — prevents Rich from
+  wrapping long lines and inserting ANSI codes that break `json.loads()` in scripts
+
 ## [0.3.0] — 2026-04-25
 
 ### Added

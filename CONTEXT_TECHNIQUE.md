@@ -1,8 +1,8 @@
 # Pythia — Contexte technique
 
-Version cible : **0.2.1**
+Version cible : **0.4.0**
 Checks implémentés : **16 / 16**
-Dernière mise à jour : 2026-04-25
+Dernière mise à jour : 2026-04-26
 
 ---
 
@@ -162,10 +162,11 @@ Threshold CLI par défaut : **70/100**. Exit code 1 si score < threshold.
 
 ---
 
-## API publique (v0.2.1)
+## API publique (v0.4.0)
 
 ```python
-from pythia import audit_url, audit_html, Report, CheckResult, AuditContext
+from pythia import audit_url, audit_html, fix_url, compare_urls
+from pythia import Report, CheckResult, Fix, FixReport, CompareReport, AuditContext
 
 # Audit live
 report: Report = await audit_url("https://example.com/page")
@@ -173,12 +174,18 @@ report: Report = await audit_url("https://example.com/page")
 # Audit offline
 report: Report = await audit_html(html_string, base_url="https://example.com/page")
 
-# Sync wrapper
-import asyncio
-report = asyncio.run(audit_url("https://example.com"))
+# Fixes HTML prêts à coller
+fix_report: FixReport = await fix_url("https://example.com/page")
+for fix in fix_report.fixes:
+    print(fix.check_name, fix.location, fix.snippet)
+
+# Comparaison concurrentielle
+cmp: CompareReport = await compare_urls("https://site-a.com", "https://site-b.com")
+print(cmp.leader, cmp.score_delta)
 ```
 
-Exports `__init__.py` : `audit_url`, `audit_html`, `Report`, `CheckResult`, `AuditContext`, `__version__`
+Exports `__init__.py` : `audit_url`, `audit_html`, `fix_url`, `compare_urls`, `generate_fixes`,
+`generate_llms_txt`, `Report`, `CheckResult`, `Fix`, `FixReport`, `CompareReport`, `AuditContext`, `__version__`
 
 ---
 
@@ -190,3 +197,4 @@ Exports `__init__.py` : `audit_url`, `audit_html`, `Report`, `CheckResult`, `Aud
 | v0.1.0 — checks complets | 2026-04-24 | 14 checks implémentés (structure, schema, html, content), 88 tests, ruff clean, publié PyPI |
 | v0.2.0 — page-type + 2 nouveaux checks | 2026-04-25 | `--page-type`, auto-détection homepage, `eeat`/`faq` SKIP homepage, `canonical_url`, `word_count`, 112 tests |
 | v0.2.1 — API publique | 2026-04-25 | `api.py` (`audit_url`, `audit_html`), `__init__.py` exports, SKIP gracieux structure sans base_url, 125 tests |
+| v0.4.0 — fix + compare | 2026-04-26 | `pythia fix` (fixers.py, reporters/fixes.py, Fix/FixReport models), `pythia compare` (reporters/compare.py, CompareReport model), `fix_url()`/`compare_urls()` API, fix JSON CLI print(), 212 tests |
