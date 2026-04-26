@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, PrivateAttr
 
+FixLocation = Literal["head", "body", "server", "content"]
+
 PageType = Literal["auto", "article", "homepage", "doc"]
 ResolvedPageType = Literal["article", "homepage", "doc"]
 
@@ -56,3 +58,26 @@ class Report(BaseModel):
     passed: bool
     results: list[CheckResult]
     scores_by_category: dict[str, float] = Field(default_factory=dict)
+
+
+class Fix(BaseModel):
+    check_name: str
+    status: Literal["FAIL", "WARN"]
+    location: FixLocation
+    snippet: str
+    note: str = ""
+
+
+class FixReport(BaseModel):
+    url: str
+    audit: Report
+    fixes: list[Fix]
+
+
+class CompareReport(BaseModel):
+    url1: str
+    url2: str
+    report1: Report
+    report2: Report
+    score_delta: float
+    leader: Literal["url1", "url2", "tie"]

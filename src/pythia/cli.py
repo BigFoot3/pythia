@@ -10,7 +10,9 @@ from rich.table import Table
 from . import __version__
 from .api import audit_url
 from .checks import ALL_CHECKS
+from .fixers import generate_fixes
 from .generators import generate_llms_txt
+from .reporters.fixes import render_fixes_json, render_fixes_markdown
 from .reporters.json_reporter import render_json
 from .reporters.markdown import render_markdown
 
@@ -72,6 +74,37 @@ def list_checks() -> None:
         c = check_cls()
         table.add_row(c.name, c.category, str(c.weight))
     console.print(table)
+
+
+@app.command()
+def fix(
+    url: str = typer.Argument(..., help="URL to audit and fix"),
+    format: str = typer.Option("md", "--format", "-f", help="Output format: md or json"),
+    lang: str = typer.Option("en", "--lang", "-l", help="Language: en or fr"),
+    page_type: str = typer.Option("auto", "--page-type", "-p", help="Page type: auto, article, homepage, doc"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save report to file"),
+) -> None:
+    """Generate ready-to-paste HTML fixes for all FAIL/WARN checks."""
+    asyncio.run(_run_fix(url, format, lang, page_type, output))
+
+
+async def _run_fix(url: str, format: str, lang: str, page_type: str, output: str | None) -> None:
+    report = await audit_url(url, lang=lang, page_type=page_type)
+    fixes = generate_fixes(report)
+
+    if format == "json":
+        output_str = render_fixes_json(report, fixes)
+    else:
+        output_str = render_fixes_markdown(report, fixes)
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(output_str)
+        console.print(f"Fixes saved to [green]{output}[/green]")
+    elif format == "json":
+        console.print(output_str)
+    else:
+        console.print(Markdown(output_str))
 
 
 @app.command(name="generate-llms")
