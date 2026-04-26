@@ -272,3 +272,26 @@ def test_cli_fix_json_output():
     data = json.loads(result.output)
     assert "fixes" in data
     assert data["fixes_count"] > 0
+
+
+@respx.mock
+def test_cli_fix_output_file(tmp_path):
+    _mock_site("https://site-b.com/guide", _HTML_BAD)
+    out = tmp_path / "fixes.md"
+    result = CliRunner().invoke(app, ["fix", "https://site-b.com/guide", "--output", str(out)])
+    assert result.exit_code == 0
+    assert out.exists()
+    assert "Pythia Fix" in out.read_text()
+
+
+@respx.mock
+def test_cli_compare_output_file(tmp_path):
+    _mock_site("https://site-a.com/guide", _HTML_GOOD)
+    _mock_site("https://site-b.com/guide", _HTML_BAD)
+    out = tmp_path / "compare.md"
+    result = CliRunner().invoke(
+        app, ["compare", "https://site-a.com/guide", "https://site-b.com/guide", "--output", str(out)]
+    )
+    assert result.exit_code == 0
+    assert out.exists()
+    assert "Pythia Compare" in out.read_text()

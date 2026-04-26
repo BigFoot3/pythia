@@ -1,10 +1,10 @@
-"""Tests for the public Python API (audit_url / audit_html)."""
+"""Tests for the public Python API (audit_url / audit_html / fix_url / compare_urls)."""
 
 import httpx
 import pytest
 import respx
 
-from pythia import CheckResult, Report, audit_html, audit_url
+from pythia import CheckResult, Fix, FixReport, Report, audit_html, audit_url, fix_url
 
 _ARTICLE_HTML = """\
 <!DOCTYPE html>
@@ -158,3 +158,36 @@ def test_version_is_string():
     import pythia
     assert isinstance(pythia.__version__, str)
     assert pythia.__version__.startswith("0.")
+
+
+# ── fix_url ────────────────────────────────────────────────────────────────
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_fix_url_returns_fix_report():
+    respx.get("https://example.com/page").mock(return_value=httpx.Response(200, text=_ARTICLE_HTML))
+    respx.get("https://example.com/robots.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/llms.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/llms-full.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/sitemap.xml").mock(return_value=httpx.Response(404))
+
+    fix_report = await fix_url("https://example.com/page")
+    assert isinstance(fix_report, FixReport)
+    assert fix_report.url == "https://example.com/page"
+    assert isinstance(fix_report.audit, Report)
+    assert isinstance(fix_report.fixes, list)
+    assert all(isinstance(f, Fix) for f in fix_report.fixes)
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_fix_url_only_fail_warn():
+    respx.get("https://example.com/page").mock(return_value=httpx.Response(200, text=_ARTICLE_HTML))
+    respx.get("https://example.com/robots.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/llms.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/llms-full.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://example.com/sitemap.xml").mock(return_value=httpx.Response(404))
+
+    fix_report = await fix_url("https://example.com/page")
+    for fix in fix_report.fixes:
+        assert fix.status in ("FAIL", "WARN")
