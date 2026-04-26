@@ -1,6 +1,6 @@
 # Pythia — Contexte technique
 
-Version cible : **0.4.0**
+Version cible : **0.4.1**
 Checks implémentés : **16 / 16**
 Dernière mise à jour : 2026-04-26
 
@@ -198,3 +198,4 @@ Exports `__init__.py` : `audit_url`, `audit_html`, `fix_url`, `compare_urls`, `g
 | v0.2.0 — page-type + 2 nouveaux checks | 2026-04-25 | `--page-type`, auto-détection homepage, `eeat`/`faq` SKIP homepage, `canonical_url`, `word_count`, 112 tests |
 | v0.2.1 — API publique | 2026-04-25 | `api.py` (`audit_url`, `audit_html`), `__init__.py` exports, SKIP gracieux structure sans base_url, 125 tests |
 | v0.4.0 — fix + compare | 2026-04-26 | `pythia fix` (fixers.py, reporters/fixes.py, Fix/FixReport models), `pythia compare` (reporters/compare.py, CompareReport model), `fix_url()`/`compare_urls()` API, fix JSON CLI print(), 212 tests |
+| v0.4.1 — GitHub Action | 2026-04-26 | `action.yml` composite action (`BigFoot3/pythia@v1`), dual-pass audit (JSON outputs + Markdown step summary), `publish.yml` pattern fix `v*` → `v*.*.*`, floating `v1` tag |

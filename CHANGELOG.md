@@ -6,6 +6,22 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-04-26
+
+### Added
+- **GitHub Action** (`BigFoot3/pythia@v1`) — composite action that installs `pythia-geo`
+  and audits a URL in any CI workflow with no API key required:
+  - Inputs: `url` (required), `threshold` (default 70), `fail-on-fail` (default true),
+    `page-type` (default auto), `lang` (default en), `version` (pin to a specific release)
+  - Outputs: `score` (float 0–100), `passed` (true/false string)
+  - Writes Markdown report to `$GITHUB_STEP_SUMMARY` for inline display in the Actions UI
+  - Dual-pass: JSON pass captures typed outputs; Markdown pass renders the step summary
+  - Respects `fail-on-fail: false` for score collection without blocking CI
+
+### Fixed
+- `publish.yml` now matches only `v*.*.*` tags (not `v1` floating tag) to prevent
+  spurious PyPI publish attempts when the floating major tag is updated
+
 ## [0.4.0] — 2026-04-26
 
 ### Added

@@ -12,7 +12,7 @@ Quick start::
     # Audit raw HTML (offline / CI)
     report = asyncio.run(audit_html("<html>...</html>", base_url="https://example.com"))
 """
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from .api import audit_html, audit_url, compare_urls, fix_url
 from .fixers import generate_fixes
