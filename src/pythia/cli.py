@@ -8,10 +8,11 @@ from rich.markdown import Markdown
 from rich.table import Table
 
 from . import __version__
-from .api import audit_url
+from .api import audit_url, compare_urls
 from .checks import ALL_CHECKS
 from .fixers import generate_fixes
 from .generators import generate_llms_txt
+from .reporters.compare import render_compare_json, render_compare_markdown
 from .reporters.fixes import render_fixes_json, render_fixes_markdown
 from .reporters.json_reporter import render_json
 from .reporters.markdown import render_markdown
@@ -56,7 +57,7 @@ async def _run_audit(
             f.write(output_str)
         console.print(f"Report saved to [green]{output}[/green]")
     elif format == "json":
-        console.print(output_str)
+        print(output_str)
     else:
         console.print(Markdown(output_str))
 
@@ -102,7 +103,37 @@ async def _run_fix(url: str, format: str, lang: str, page_type: str, output: str
             f.write(output_str)
         console.print(f"Fixes saved to [green]{output}[/green]")
     elif format == "json":
-        console.print(output_str)
+        print(output_str)
+    else:
+        console.print(Markdown(output_str))
+
+
+@app.command()
+def compare(
+    url1: str = typer.Argument(..., help="First URL to audit"),
+    url2: str = typer.Argument(..., help="Second URL to compare against"),
+    format: str = typer.Option("md", "--format", "-f", help="Output format: md or json"),
+    lang: str = typer.Option("en", "--lang", "-l", help="Language: en or fr"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save report to file"),
+) -> None:
+    """Compare two URLs check by check."""
+    asyncio.run(_run_compare(url1, url2, format, lang, output))
+
+
+async def _run_compare(url1: str, url2: str, format: str, lang: str, output: str | None) -> None:
+    cmp = await compare_urls(url1, url2, lang=lang)
+
+    if format == "json":
+        output_str = render_compare_json(cmp)
+    else:
+        output_str = render_compare_markdown(cmp)
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(output_str)
+        console.print(f"Comparison saved to [green]{output}[/green]")
+    elif format == "json":
+        print(output_str)
     else:
         console.print(Markdown(output_str))
 
